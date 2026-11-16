@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雲の形分類ビジュアルガイド</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #0a1628; color: #e8f4ff; font-family: 'Hiragino Kana Gothic Pro', 'Meiryo', sans-serif; }
+  .panel { background: #111e35; border: 1px solid #1e3a5f; border-radius: 8px; }
+  .choice-btn { transition: all 0.2s; border: 2px solid transparent; }
+  .choice-btn.selected { border-color: #60a5fa; background: #1e3a5f; }
+  .choice-btn:hover { background: #1a3050; }
+  #altitude-diagram { display: block; }
+  .tab-btn.active { background: #1e3a5f; border-bottom: 2px solid #60a5fa; }
+  textarea { resize: vertical; }
+  .cloud-card { transition: all 0.2s; cursor: pointer; }
+  .cloud-card:hover { transform: translateY(-2px); }
+  .cloud-card.selected-card { border-color: #60a5fa; }
+</style>
+</head>
+<body class="min-h-screen p-3">
+<div class="max-w-5xl mx-auto">
+  <h1 class="text-2xl font-bold text-center py-3 text-blue-200">雲の形分類ビジュアルガイド</h1>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 mb-3 border-b border-gray-700">
+    <button class="tab-btn active px-4 py-2 text-sm rounded-t" id="tab-wizard" aria-selected="true">雲を判定</button>
+    <button class="tab-btn px-4 py-2 text-sm rounded-t" id="tab-gallery" aria-selected="false">雲ギャラリー</button>
+    <button class="tab-btn px-4 py-2 text-sm rounded-t" id="tab-altitude" aria-selected="false">高度分布図</button>
+    <button class="tab-btn px-4 py-2 text-sm rounded-t" id="tab-diary" aria-selected="false">観察日記</button>
+  </div>
+
+  <!-- Tab: Wizard -->
+  <div id="pane-wizard">
+    <div class="flex flex-wrap gap-3">
+      <!-- Steps -->
+      <div class="panel p-3 flex-1" style="min-width:260px;">
+        <div class="text-sm font-semibold text-blue-300 mb-3">雲の種類を判定する</div>
+
+        <!-- Step 1 -->
+        <div class="mb-3" id="step1-section">
+          <div class="text-xs font-semibold text-gray-300 mb-1">Step 1: 高度（どの高さ？）</div>
+          <div class="grid grid-cols-2 gap-1">
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="altitude" data-v="high">上層雲（5〜13km）</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="altitude" data-v="mid">中層雲（2〜7km）</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="altitude" data-v="low">下層雲（0〜2km）</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="altitude" data-v="vertical">対流雲（垂直発達）</button>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="mb-3" id="step2-section">
+          <div class="text-xs font-semibold text-gray-300 mb-1">Step 2: 形状</div>
+          <div class="grid grid-cols-2 gap-1">
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="shape" data-v="wave">波状・うろこ状</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="shape" data-v="cotton">綿状・もくもく</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="shape" data-v="layer">層状・一面に広がる</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="shape" data-v="fibrous">繊維状・筋状</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="shape" data-v="anvil">かなとこ状・巨大</button>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="mb-3" id="step3-section">
+          <div class="text-xs font-semibold text-gray-300 mb-1">Step 3: 透明度</div>
+          <div class="grid grid-cols-2 gap-1">
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="opacity" data-v="thin">薄い（太陽が透ける）</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="opacity" data-v="thick">厚い（不透明）</button>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="mb-3" id="step4-section">
+          <div class="text-xs font-semibold text-gray-300 mb-1">Step 4: 降水・雷</div>
+          <div class="grid grid-cols-3 gap-1">
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="precip" data-v="none">なし</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="precip" data-v="rain">雨・雪あり</button>
+            <button class="choice-btn text-xs px-2 py-2 rounded bg-gray-800" data-q="precip" data-v="thunder">雷あり</button>
+          </div>
+        </div>
+
+        <button id="judge-btn" class="bg-blue-700 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded w-full">判定する</button>
+        <button id="reset-wizard" class="bg-gray-700 hover:bg-gray-600 text-white text-xs px-4 py-1 rounded w-full mt-1">リセット</button>
+      </div>
+
+      <!-- Result panel -->
+      <div class="panel p-3 flex-1" style="min-width:260px;" id="result-panel">
+        <div class="text-sm font-semibold text-blue-300 mb-2">判定結果</div>
+        <div id="result-content">
+          <div class="text-gray-500 text-xs">Step 1〜4を選んで「判定する」を押してください</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Gallery -->
+  <div id="pane-gallery" class="hidden">
+    <div class="grid grid-cols-2 gap-2" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+      <!-- Cards generated by JS -->
+    </div>
+  </div>
+
+  <!-- Tab: Altitude diagram -->
+  <div id="pane-altitude" class="hidden">
+    <div class="panel p-3">
+      <div class="text-sm font-semibold text-blue-300 mb-2">雲の高度別分布図</div>
+      <svg id="altitude-diagram" width="100%" viewBox="0 0 700 500" aria-label="雲の高度分布図" role="img"></svg>
+    </div>
+  </div>
+
+  <!-- Tab: Diary -->
+  <div id="pane-diary" class="hidden">
+    <div class="panel p-3 max-w-xl mx-auto">
+      <div class="text-sm font-semibold text-blue-300 mb-2">今日の雲 観察日記</div>
+      <div class="flex gap-2 mb-2">
+        <input type="date" id="obs-date" class="bg-gray-800 border border-gray-600 text-sm px-2 py-1 rounded flex-1" aria-label="観察日">
+        <input type="text" id="obs-cloud" placeholder="雲の種類..." class="bg-gray-800 border border-gray-600 text-sm px-2 py-1 rounded flex-1" aria-label="雲の種類">
+      </div>
+      <textarea id="obs-note" rows="3" placeholder="メモ（天気・場所・気づいたこと）..." class="bg-gray-800 border border-gray-600 text-sm px-2 py-2 rounded w-full text-white" aria-label="観察メモ"></textarea>
+      <button id="save-obs" class="bg-blue-700 hover:bg-blue-600 text-white text-sm px-4 py-1 rounded mt-2">記録する</button>
+      <div class="mt-3 text-xs text-gray-400 font-semibold">過去の記録</div>
+      <div id="obs-list" class="mt-1 flex flex-col gap-1"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Cloud data
+  const cloudTypes = [
+    {
+      key: 'ci', jpName: '巻雲（けんうん）', intlName: 'Cirrus', abbr: 'Ci',
+      altitude: 'high', shape: 'fibrous', opacity: 'thin', precip: 'none',
+      altRange: '6〜13km', color: '#e8f4ff',
+      weather: '晴天の前兆が多いが、前線接近時は天気崩れの予告',
+      fact: '氷晶でできた薄い繊維状の雲。「すじ雲」とも呼ばれる。',
+      svgDesc: 'fibrous'
+    },
+    {
+      key: 'cc', jpName: '巻積雲（けんせきうん）', intlName: 'Cirrocumulus', abbr: 'Cc',
+      altitude: 'high', shape: 'wave', opacity: 'thin', precip: 'none',
+      altRange: '5〜13km', color: '#d8ecff',
+      weather: '天気変化の前兆。「いわし雲」とも。夏は翌日雨の可能性',
+      fact: '小さな白い粒が整列する「うろこ雲」。氷晶から成る。',
+      svgDesc: 'cirrocumulus'
+    },
+    {
+      key: 'cs', jpName: '巻層雲（けんそううん）', intlName: 'Cirrostratus', abbr: 'Cs',
+      altitude: 'high', shape: 'layer', opacity: 'thin', precip: 'none',
+      altRange: '5〜13km', color: '#c8e4ff',
+      weather: '光輪（ハロ）現象を起こす。前線接近のサイン',
+      fact: '空一面を覆う薄いベール状の雲。太陽の周りに光の輪が出る。',
+      svgDesc: 'veil'
+    },
+    {
+      key: 'ac', jpName: '高積雲（こうせきうん）', intlName: 'Altocumulus', abbr: 'Ac',
+      altitude: 'mid', shape: 'wave', opacity: 'thin', precip: 'none',
+      altRange: '2〜7km', color: '#b8d4f0',
+      weather: '羊雲とも。午前中に見えると午後雷雨の可能性',
+      fact: '中層にある白または灰色の綿状雲の集まり。「ひつじ雲」。',
+      svgDesc: 'altocumulus'
+    },
+    {
+      key: 'as', jpName: '高層雲（こうそううん）', intlName: 'Altostratus', abbr: 'As',
+      altitude: 'mid', shape: 'layer', opacity: 'thick', precip: 'rain',
+      altRange: '2〜7km', color: '#8090b0',
+      weather: '太陽がぼんやり透けて見える。まもなく雨の可能性大',
+      fact: '灰色〜青灰色の均一な雲の層。「おぼろ雲」とも呼ばれる。',
+      svgDesc: 'layer-thick'
+    },
+    {
+      key: 'ns', jpName: '乱層雲（らんそううん）', intlName: 'Nimbostratus', abbr: 'Ns',
+      altitude: 'low', shape: 'layer', opacity: 'thick', precip: 'rain',
+      altRange: '0〜3km（上部は7kmまで）', color: '#505870',
+      weather: '長時間にわたる雨や雪を降らせる雨雲の代表格',
+      fact: '空全体を暗く覆う厚い雲。「雨雲」「雪雲」と呼ばれる。',
+      svgDesc: 'nimbostratus'
+    },
+    {
+      key: 'sc', jpName: '層積雲（そうせきうん）', intlName: 'Stratocumulus', abbr: 'Sc',
+      altitude: 'low', shape: 'wave', opacity: 'thick', precip: 'none',
+      altRange: '0〜2km', color: '#8090a0',
+      weather: '曇りの日の典型的な雲。小雨になることもある',
+      fact: '最もよく見られる雲の種類。グレーの丸い塊が連なる。',
+      svgDesc: 'stratocumulus'
+    },
+    {
+      key: 'st', jpName: '層雲（そううん）', intlName: 'Stratus', abbr: 'St',
+      altitude: 'low', shape: 'layer', opacity: 'thick', precip: 'rain',
+      altRange: '0〜0.5km', color: '#6878a0',
+      weather: '霧のように低く垂れこめる。霧雨や小雨をもたらす',
+      fact: '最も低い雲。霧が地面から離れると層雲になる。',
+      svgDesc: 'stratus'
+    },
+    {
+      key: 'cu', jpName: '積雲（せきうん）', intlName: 'Cumulus', abbr: 'Cu',
+      altitude: 'vertical', shape: 'cotton', opacity: 'thick', precip: 'none',
+      altRange: '0.5〜2km（底部）', color: '#d0e8ff',
+      weather: '晴天の「わた雲」。午後に発達すると積乱雲になることも',
+      fact: '夏の青空に浮かぶ白いもこもこした雲。対流で形成される。',
+      svgDesc: 'cumulus'
+    },
+    {
+      key: 'cb', jpName: '積乱雲（せきらんうん）', intlName: 'Cumulonimbus', abbr: 'Cb',
+      altitude: 'vertical', shape: 'anvil', opacity: 'thick', precip: 'thunder',
+      altRange: '0.5〜12km（垂直発達）', color: '#6070a0',
+      weather: '雷・突風・豪雨・ひょうをもたらす危険な雲。入道雲',
+      fact: '地表から対流圏界面まで発達する巨大な雲。かなとこ雲が特徴。',
+      svgDesc: 'cumulonimbus'
+    }
+  ];
+
+  // ---- SVG Cloud Illustrations ----
+  function drawCloudSVG(type, w, h) {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 60');
+    svg.setAttribute('width', String(w));
+    svg.setAttribute('height', String(h));
+
+    // Sky gradient
+    const defs = document.createElementNS(svgNS, 'defs');
+    const skyGrad = document.createElementNS(svgNS, 'linearGradient');
+    skyGrad.setAttribute('id', 'sky-' + type);
+    skyGrad.setAttribute('x1', '0'); skyGrad.setAttribute('y1', '0');
+    skyGrad.setAttribute('x2', '0'); skyGrad.setAttribute('y2', '1');
+    const s1 = document.createElementNS(svgNS, 'stop');
+    s1.setAttribute('offset', '0%'); s1.setAttribute('stop-color', '#1a3a6a');
+    const s2 = document.createElementNS(svgNS, 'stop');
+    s2.setAttribute('offset', '100%'); s2.setAttribute('stop-color', '#3a6090');
+    skyGrad.appendChild(s1); skyGrad.appendChild(s2);
+    defs.appendChild(skyGrad);
+    svg.appendChild(defs);
+
+    const bg = document.createElementNS(svgNS, 'rect');
+    bg.setAttribute('width', '100'); bg.setAttribute('height', '60');
+    bg.setAttribute('fill', 'url(#sky-' + type + ')');
+    svg.appendChild(bg);
+
+    function addCloudPuff(cx, cy, rx, ry, color, opacity) {
+      const e = document.createElementNS(svgNS, 'ellipse');
+      e.setAttribute('cx', String(cx)); e.setAttribute('cy', String(cy));
+      e.setAttribute('rx', String(rx)); e.setAttribute('ry', String(ry));
+      e.setAttribute('fill', color); e.setAttribute('opacity', String(opacity));
+      svg.appendChild(e);
+    }
+
+    function addLine(x1, y1, x2, y2, color, sw, opacity) {
+      const l = document.createElementNS(svgNS, 'line');
+      l.setAttribute('x1', String(x1)); l.setAttribute('y1', String(y1));
+      l.setAttribute('x2', String(x2)); l.setAttribute('y2', String(y2));
+      l.setAttribute('stroke', color); l.setAttribute('stroke-width', String(sw));
+      l.setAttribute('opacity', String(opacity));
+      svg.appendChild(l);
+    }
+
+    switch (type) {
+      case 'fibrous':
+        for (let i = 0; i < 6; i++) {
+          const p = document.createElementNS(svgNS, 'path');
+          p.setAttribute('d', `M ${10+i*14} ${15+i*2} Q ${20+i*14} ${10+i*2} ${30+i*14} ${18+i*2}`);
+          p.setAttribute('stroke', '#ffffff'); p.setAttribute('stroke-width', '1.5');
+          p.setAttribute('fill', 'none'); p.setAttribute('opacity', '0.7');
+          svg.appendChild(p);
+        }
+        break;
+      case 'cirrocumulus':
+        for (let row = 0; row < 2; row++)
+          for (let col = 0; col < 5; col++)
+            addCloudPuff(15 + col * 18, 20 + row * 16, 7, 5, '#ffffff', 0.8);
+        break;
+      case 'veil':
+        addCloudPuff(50, 30, 48, 20, '#e0eeff', 0.4);
+        // Halo ring
+        const circle = document.createElementNS(svgNS, 'circle');
+        circle.setAttribute('cx', '50'); circle.setAttribute('cy', '20');
+        circle.setAttribute('r', '12');
+        circle.setAttribute('stroke', 'rgba(255,220,180,0.6)'); circle.setAttribute('stroke-width', '2');
+        circle.setAttribute('fill', 'none');
+        svg.appendChild(circle);
+        const sun = document.createElementNS(svgNS, 'circle');
+        sun.setAttribute('cx', '50'); sun.setAttribute('cy', '20'); sun.setAttribute('r', '4');
+        sun.setAttribute('fill', 'rgba(255,240,150,0.8)');
+        svg.appendChild(sun);
+        break;
+      case 'altocumulus':
+        for (let i = 0; i < 4; i++)
+          addCloudPuff(18 + i * 20, 28, 9, 7, '#c8d8e8', 0.9);
+        addCloudPuff(10, 38, 7, 5, '#c0d0e0', 0.7);
+        addCloudPuff(80, 42, 8, 5, '#c0d0e0', 0.7);
+        break;
+      case 'layer-thick':
+        addCloudPuff(50, 32, 48, 14, '#8090b0', 0.8);
+        addCloudPuff(50, 26, 48, 10, '#a0b0c8', 0.5);
+        break;
+      case 'nimbostratus':
+        addCloudPuff(50, 25, 50, 18, '#405060', 0.95);
+        // Rain lines
+        for (let i = 0; i < 8; i++)
+          addLine(12 + i * 11, 42, 10 + i * 11, 58, '#a0b8d0', 1, 0.6);
+        break;
+      case 'stratocumulus':
+        for (let i = 0; i < 3; i++)
+          addCloudPuff(20 + i * 28, 35, 15, 10, '#8898aa', 0.9);
+        addCloudPuff(50, 30, 30, 8, '#9aabb8', 0.6);
+        break;
+      case 'stratus':
+        addCloudPuff(50, 48, 50, 10, '#5868a0', 0.9);
+        addCloudPuff(50, 44, 50, 6, '#7888b0', 0.5);
+        for (let i = 0; i < 5; i++)
+          addLine(14 + i * 15, 55, 12 + i * 15, 60, '#90a8c8', 1, 0.5);
+        break;
+      case 'cumulus':
+        addCloudPuff(50, 32, 20, 14, '#e8f0ff', 1);
+        addCloudPuff(36, 36, 14, 10, '#dce8ff', 0.9);
+        addCloudPuff(64, 36, 14, 10, '#dce8ff', 0.9);
+        addCloudPuff(50, 24, 12, 9, '#f0f8ff', 1);
+        // Flat base
+        const base = document.createElementNS(svgNS, 'rect');
+        base.setAttribute('x', '32'); base.setAttribute('y', '42');
+        base.setAttribute('width', '36'); base.setAttribute('height', '5');
+        base.setAttribute('fill', '#c8d8f0'); base.setAttribute('rx', '2');
+        svg.appendChild(base);
+        break;
+      case 'cumulonimbus':
+        // Anvil top
+        addCloudPuff(50, 10, 35, 8, '#a0b0d0', 0.7);
+        // Tower
+        addCloudPuff(50, 22, 18, 12, '#c0d0e8', 1);
+        addCloudPuff(50, 32, 22, 12, '#b0c0d8', 1);
+        addCloudPuff(40, 28, 12, 10, '#c8d8e8', 0.9);
+        addCloudPuff(60, 28, 12, 10, '#c8d8e8', 0.9);
+        addCloudPuff(50, 42, 24, 10, '#8090b0', 1);
+        // Rain+lightning
+        for (let i = 0; i < 6; i++)
+          addLine(14 + i * 12, 50, 12 + i * 12, 58, '#a0b8d0', 1.5, 0.7);
+        const bolt = document.createElementNS(svgNS, 'path');
+        bolt.setAttribute('d', 'M 52 46 L 48 52 L 52 52 L 46 60');
+        bolt.setAttribute('stroke', '#ffd020'); bolt.setAttribute('stroke-width', '2');
+        bolt.setAttribute('fill', 'none');
+        svg.appendChild(bolt);
+        break;
+    }
+    return svg;
+  }
+
+  // ---- Classification logic ----
+  const answers = {};
+
+  function matchCloud(cloud, ans) {
+    let score = 0;
+    if (ans.altitude) {
+      if (cloud.altitude === ans.altitude) score += 3;
+      else if (cloud.altitude === 'vertical' && ans.altitude === 'low') score += 1;
+    }
+    if (ans.shape && cloud.shape === ans.shape) score += 2;
+    if (ans.opacity && cloud.opacity === ans.opacity) score += 1;
+    if (ans.precip && cloud.precip === ans.precip) score += 2;
+    return score;
+  }
+
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.dataset.q;
+      const v = btn.dataset.v;
+      answers[q] = v;
+      // Update visual selection
+      document.querySelectorAll(`.choice-btn[data-q="${q}"]`).forEach(b => {
+        b.classList.toggle('selected', b === btn);
+      });
+    });
+  });
+
+  document.getElementById('judge-btn').addEventListener('click', () => {
+    if (!answers.altitude && !answers.shape) {
+      document.getElementById('result-content').innerHTML = '<p class="text-yellow-400 text-xs">少なくとも「高度」を選んでください。</p>';
+      return;
+    }
+    const scored = cloudTypes.map(c => ({ ...c, score: matchCloud(c, answers) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+
+    const container = document.getElementById('result-content');
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    scored.forEach((c, idx) => {
+      if (c.score === 0) return;
+      const div = document.createElement('div');
+      div.className = 'panel p-2 mb-2';
+      const rank = idx === 0 ? '🥇 最有力候補' : idx === 1 ? '🥈 次点' : '🥉 参考';
+      const title = document.createElement('div');
+      title.className = 'text-sm font-bold text-blue-200 mb-1';
+      title.textContent = rank + '  ' + c.jpName;
+      div.appendChild(title);
+
+      const svgEl = drawCloudSVG(c.svgDesc, 120, 72);
+      div.appendChild(svgEl);
+
+      const abbr = document.createElement('div');
+      abbr.className = 'text-xs text-gray-400 mt-1';
+      abbr.textContent = c.intlName + ' (' + c.abbr + ') / 高度: ' + c.altRange;
+      div.appendChild(abbr);
+
+      const weather = document.createElement('div');
+      weather.className = 'text-xs text-green-300 mt-1';
+      weather.textContent = '天気: ' + c.weather;
+      div.appendChild(weather);
+
+      const fact = document.createElement('div');
+      fact.className = 'text-xs text-gray-400 mt-1';
+      fact.textContent = c.fact;
+      div.appendChild(fact);
+
+      container.appendChild(div);
+    });
+  });
+
+  document.getElementById('reset-wizard').addEventListener('click', () => {
+    Object.keys(answers).forEach(k => delete answers[k]);
+    document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+    const c = document.getElementById('result-content');
+    while (c.firstChild) c.removeChild(c.firstChild);
+    const msg = document.createElement('div');
+    msg.className = 'text-gray-500 text-xs';
+    msg.textContent = 'Step 1〜4を選んで「判定する」を押してください';
+    c.appendChild(msg);
+  });
+
+  // ---- Gallery ----
+  function buildGallery() {
+    const grid = document.querySelector('#pane-gallery .grid');
+    cloudTypes.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'cloud-card panel p-2 border border-transparent';
+      const title = document.createElement('div');
+      title.className = 'text-xs font-bold text-blue-200 mb-1';
+      title.textContent = c.jpName;
+      card.appendChild(title);
+      card.appendChild(drawCloudSVG(c.svgDesc, 160, 90));
+      const info = document.createElement('div');
+      info.className = 'text-xs text-gray-400 mt-1';
+      info.textContent = c.altRange + ' / ' + c.abbr;
+      card.appendChild(info);
+      const w = document.createElement('div');
+      w.className = 'text-xs text-green-300 mt-1';
+      w.textContent = c.weather;
+      card.appendChild(w);
+      grid.appendChild(card);
+    });
+  }
+
+  // ---- Altitude Diagram ----
+  function buildAltitudeDiagram() {
+    const svgEl = document.getElementById('altitude-diagram');
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const W = 700, H = 500;
+
+    // Sky gradient bg
+    const defs = document.createElementNS(svgNS, 'defs');
+    const grad = document.createElementNS(svgNS, 'linearGradient');
+    grad.setAttribute('id', 'skyGradDiagram');
+    grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+    grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+    const stops = [
+      ['0%', '#000a1e'], ['30%', '#0a1a3a'], ['60%', '#1a3a6a'], ['80%', '#2a5090'], ['100%', '#4a80b0']
+    ];
+    stops.forEach(([offset, color]) => {
+      const s = document.createElementNS(svgNS, 'stop');
+      s.setAttribute('offset', offset); s.setAttribute('stop-color', color);
+      grad.appendChild(s);
+    });
+    defs.appendChild(grad);
+    svgEl.appendChild(defs);
+
+    const bg = document.createElementNS(svgNS, 'rect');
+    bg.setAttribute('width', '700'); bg.setAttribute('height', '500');
+    bg.setAttribute('fill', 'url(#skyGradDiagram)');
+    svgEl.appendChild(bg);
+
+    // Ground
+    const ground = document.createElementNS(svgNS, 'rect');
+    ground.setAttribute('x', '0'); ground.setAttribute('y', '460');
+    ground.setAttribute('width', '700'); ground.setAttribute('height', '40');
+    ground.setAttribute('fill', '#3a5020');
+    svgEl.appendChild(ground);
+
+    // Altitude scale (0-13km, mapped to y=460 down to y=20)
+    function altToY(km) { return 460 - (km / 13) * 440; }
+
+    // Altitude lines
+    [0, 2, 5, 7, 13].forEach(km => {
+      const y = altToY(km);
+      const line = document.createElementNS(svgNS, 'line');
+      line.setAttribute('x1', '60'); line.setAttribute('y1', String(y));
+      line.setAttribute('x2', '680'); line.setAttribute('y2', String(y));
+      line.setAttribute('stroke', 'rgba(255,255,255,0.15)'); line.setAttribute('stroke-width', '1');
+      svgEl.appendChild(line);
+      const lbl = document.createElementNS(svgNS, 'text');
+      lbl.setAttribute('x', '45'); lbl.setAttribute('y', String(y + 4));
+      lbl.setAttribute('fill', '#a0c0e0'); lbl.setAttribute('font-size', '10');
+      lbl.setAttribute('text-anchor', 'end');
+      lbl.textContent = km + 'km';
+      svgEl.appendChild(lbl);
+    });
+
+    // Cloud positions [key, x, yBottom km, yTop km, label color]
+    const positions = [
+      { key: 'ci',  x: 540, yBot: 6,  yTop: 12, label: '巻雲\nCi',    color: '#e8f4ff' },
+      { key: 'cc',  x: 440, yBot: 5,  yTop: 10, label: '巻積雲\nCc',   color: '#d8ecff' },
+      { key: 'cs',  x: 340, yBot: 5,  yTop: 10, label: '巻層雲\nCs',   color: '#c8e4ff' },
+      { key: 'ac',  x: 540, yBot: 2,  yTop: 6,  label: '高積雲\nAc',   color: '#b8d4f0' },
+      { key: 'as',  x: 440, yBot: 2,  yTop: 7,  label: '高層雲\nAs',   color: '#8090b0' },
+      { key: 'ns',  x: 340, yBot: 0,  yTop: 5,  label: '乱層雲\nNs',   color: '#505870' },
+      { key: 'sc',  x: 240, yBot: 0,  yTop: 2,  label: '層積雲\nSc',   color: '#8090a0' },
+      { key: 'st',  x: 150, yBot: 0,  yTop: 0.5,label: '層雲\nSt',     color: '#6878a0' },
+      { key: 'cu',  x: 90,  yBot: 0.5,yTop: 3,  label: '積雲\nCu',     color: '#d0e8ff' },
+      { key: 'cb',  x: 100, yBot: 0.5,yTop: 12, label: '積乱雲\nCb',   color: '#6070a0' }
+    ];
+
+    positions.forEach(pos => {
+      const y1 = altToY(pos.yTop);
+      const y2 = altToY(pos.yBot);
+      const cloudH = y2 - y1;
+      const cloudW = 60;
+
+      // Cloud body
+      const rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', String(pos.x - cloudW / 2));
+      rect.setAttribute('y', String(y1));
+      rect.setAttribute('width', String(cloudW));
+      rect.setAttribute('height', String(Math.max(cloudH, 8)));
+      rect.setAttribute('fill', pos.color);
+      rect.setAttribute('opacity', '0.75');
+      rect.setAttribute('rx', '8');
+      svgEl.appendChild(rect);
+
+      // Label
+      const lines = pos.label.split('\n');
+      lines.forEach((line, i) => {
+        const t = document.createElementNS(svgNS, 'text');
+        t.setAttribute('x', String(pos.x));
+        t.setAttribute('y', String(y1 - 8 + i * 12));
+        t.setAttribute('fill', pos.color);
+        t.setAttribute('font-size', '9');
+        t.setAttribute('text-anchor', 'middle');
+        t.setAttribute('font-weight', 'bold');
+        t.textContent = line;
+        svgEl.appendChild(t);
+      });
+    });
+
+    // Legend
+    const zones = [
+      { label: '上層（5-13km）', y: altToY(9), color: '#a0c8ff' },
+      { label: '中層（2-7km）',  y: altToY(4.5), color: '#90b8e8' },
+      { label: '下層（0-2km）',  y: altToY(1), color: '#80a8d8' }
+    ];
+    zones.forEach(z => {
+      const t = document.createElementNS(svgNS, 'text');
+      t.setAttribute('x', '660'); t.setAttribute('y', String(z.y));
+      t.setAttribute('fill', z.color); t.setAttribute('font-size', '10');
+      t.setAttribute('text-anchor', 'end');
+      t.textContent = z.label;
+      svgEl.appendChild(t);
+    });
+  }
+
+  // ---- Diary ----
+  function loadDiary() {
+    const entries = JSON.parse(localStorage.getItem('cloud-diary') || '[]');
+    const list = document.getElementById('obs-list');
+    while (list.firstChild) list.removeChild(list.firstChild);
+    entries.slice().reverse().forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'panel p-2 text-xs';
+      const header = document.createElement('div');
+      header.className = 'font-semibold text-blue-200';
+      header.textContent = e.date + ' — ' + e.cloud;
+      div.appendChild(header);
+      const note = document.createElement('div');
+      note.className = 'text-gray-400 mt-1';
+      note.textContent = e.note;
+      div.appendChild(note);
+      list.appendChild(div);
+    });
+  }
+
+  document.getElementById('save-obs').addEventListener('click', () => {
+    const date = document.getElementById('obs-date').value;
+    const cloud = document.getElementById('obs-cloud').value.trim();
+    const note = document.getElementById('obs-note').value.trim();
+    if (!date && !cloud) return;
+    const entries = JSON.parse(localStorage.getItem('cloud-diary') || '[]');
+    entries.push({ date, cloud, note });
+    localStorage.setItem('cloud-diary', JSON.stringify(entries));
+    document.getElementById('obs-cloud').value = '';
+    document.getElementById('obs-note').value = '';
+    loadDiary();
+  });
+
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('obs-date').value = today;
+
+  // ---- Tabs ----
+  const tabs = ['wizard', 'gallery', 'altitude', 'diary'];
+  tabs.forEach(t => {
+    document.getElementById('tab-' + t).addEventListener('click', () => {
+      tabs.forEach(x => {
+        document.getElementById('tab-' + x).classList.toggle('active', x === t);
+        document.getElementById('tab-' + x).setAttribute('aria-selected', x === t ? 'true' : 'false');
+        document.getElementById('pane-' + x).classList.toggle('hidden', x !== t);
+      });
+      if (t === 'gallery') buildGallery();
+      if (t === 'altitude') buildAltitudeDiagram();
+      if (t === 'diary') loadDiary();
+    });
+  });
+
+  // Init
+  loadDiary();
+})();
+</script>
+</body>
+</html>
